@@ -1,0 +1,104 @@
+#include <Wire.h>                                                   //Einbindung aller Bibliotheken.
+#include <LiquidCrystal_I2C.h>
+LiquidCrystal_I2C lcd(0x3F, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE);      //Adressierung und Aktivierung des
+                                                                    //LCD Displays (20*4)
+#define Status 9                                                    //Defienierung der einzelnen Pins zur Besseren
+#define LED_Opt 8                                                   //Ereichbarkeit der Pins.
+#define LED_Tief 7
+#define LED_Flach 6
+#define Start 5
+#define Ping 20                                                     //Hier werden die Delays für denn Ultraschallsensor
+#define Trig 20                                                     //defieniert.
+
+int trigger = 22;                                                   //
+int echo = 10;
+
+long Messwert;
+long dauer = 0;
+long t = 0;
+
+double entfernung = 0;                                              //Hier werden die Werte gespeichert die zur
+double wert1;                                                       //Entfernungsmessung benötigt werden.
+double wert2;
+
+void setup()
+    {
+      lcd.begin(20,4);                                              //Hier wird das LCD Display initialisiert.
+      lcd.backlight();                                              //Hier wird die Hintergrundbeleuchtung eingeschaltet.
+      digitalWrite(52, HIGH);                                       //Hier wird eine Status LED zum leuchten gebracht.
+      Serial.begin (9600);
+      pinMode(trigger, OUTPUT);                                     //Kier wird den Pins der In-/Output zugewiesen.
+      pinMode(echo, INPUT);
+
+                                                                    //Ab hier wird ein kleiner Startbildschirm angezeigt.
+      lcd.setCursor(6,0);                                           //Der Cursor wird in der ersteen Zeile auf
+                                                                    //das 6 Zeichen gesetzt.
+      lcd.print("Projekt");                                         //Hier wird ab der Cursor Position "Projekt" ausgegeben.
+      lcd.setCursor(1,1);
+      lcd.print("'Herzdruckmassage'");
+      delay(2500);
+      lcd.clear();                                                  //Hier wird der gesamte Inhalt des Displays gelöscht.
+    }
+
+void loop()
+{
+    digitalWrite(trigger, LOW);                                     //Ab hier wird eine eine Rechtecksspannung erzeugt
+    delay(Trig);                                                    //um denn Ultraschallsensor zu Triggern.
+    digitalWrite(trigger, HIGH);
+    delay(Trig);
+    digitalWrite(trigger, LOW);
+    dauer = pulseIn(echo, HIGH);
+
+    entfernung = (dauer / 2) * 0.03432;                             //Hier wird die Entfernung berechnet.(Mittels-
+                                                                    //schallgeschwindigkeit)
+    lcd.setCursor(1,0);                                             //Hier wird in der ersten Zeile eine Überschrift
+    lcd.print("'Herzdruckmassage'");                                //ausgegeben.
+
+    lcd.setCursor(0,1);                                             //Hier erfolgt die Ausgabe der Drucktiefe in cm.
+    lcd.print("Drucktiefe:");
+    lcd.setCursor(12,1);
+    lcd.print(entfernung);
+    Serial.println(entfernung);
+    lcd.setCursor(16,1);
+    lcd.print(" cm");
+    delay(Ping);
+                                                                    //Ab hier folgen spezifische Ausgaben bei bestimmten
+                                                                    //Drucktiefen.
+
+  if ((entfernung <7)&&(entfernung > 5)) {                          //Zwischen 7 und 5 cm wird die Ausgabe "Optimal"
+    Serial.println("Optimal");                                      //geliefert und die LED "Optimal" leuchtet.
+    Serial.println();
+    lcd.setCursor(0,2);
+    lcd.print("Optiomal .");
+    delay(Ping);
+    digitalWrite(LED_Opt, HIGH);
+    digitalWrite(LED_Tief, LOW);
+    digitalWrite(LED_Flach, LOW);
+  }
+
+  if (entfernung <5) {                                              //Wenn die Entfernung kleine als 5 cm ist wird die
+    Serial.println("Zu Tief .");                                    //Ausgabe "Zu Tief" erscheinen und die LED "Zu Tief "
+    Serial.println();                                               //leuchtet.
+    lcd.setCursor(0,2);
+    lcd.print("Zu Tief .");
+    delay(Ping);
+    digitalWrite(LED_Opt, LOW);
+    digitalWrite(LED_Tief, HIGH);
+    digitalWrite(LED_Flach, LOW);
+  }
+
+  if (entfernung >7){                                               //Wenn die Entfernung größer ist als 7 cm wird die
+    Serial.println ("Zu Flach.");                                   //Ausgabe "Zu Flach" erscheinen und die LED "Zu Flach"
+    Serial.println();                                               //leuchtet.
+    lcd.setCursor(0,2);
+    lcd.print("Zu Flach.");
+    delay(Ping);
+    digitalWrite(LED_Opt, LOW);
+    digitalWrite(LED_Tief, LOW);
+    digitalWrite(LED_Flach, HIGH);
+  }
+
+
+
+
+}
